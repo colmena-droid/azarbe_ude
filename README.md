@@ -5,6 +5,7 @@ Vídeos en Remotion (vertical 1080×1920, 30 fps) para la nueva web [abacuseduca
 | Nº | Vídeo | Entrega |
 |----|-------|---------|
 | 001 | Flujo de acceso: iniciar sesión o registrarse | `entregas/001-flujo-registro.mp4` |
+| 002 | Azarbe · Cómo acceder a la nueva web (voz Lydia, ElevenLabs) | `entregas/002-acceso-azarbe.mp4` |
 
 ## Uso
 

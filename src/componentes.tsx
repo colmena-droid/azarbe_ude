@@ -70,9 +70,23 @@ export const Navegador: React.FC<{
   w: number;
   h: number;
   url: string;
+  urlEscrita?: { desde: number; porFrame?: number }; // la URL se escribe sola
+  cargaEn?: number; // antes de este frame la página está en blanco
   children?: (z: number) => React.ReactNode; // superposiciones en coordenadas de página
-}> = ({ src, anchoPagina, altoPagina, claves, x, y, w, h, url, children }) => {
+}> = ({ src, anchoPagina, altoPagina, claves, x, y, w, h, url, urlEscrita, cargaEn, children }) => {
   const frame = useCurrentFrame();
+  const urlVisible = urlEscrita
+    ? url.slice(0, Math.max(0, Math.floor((frame - urlEscrita.desde) * (urlEscrita.porFrame ?? 0.5))))
+    : url;
+  const tecleando = urlEscrita && urlVisible.length < url.length && frame >= urlEscrita.desde - 10;
+  const opPagina =
+    cargaEn === undefined
+      ? 1
+      : interpolate(frame, [cargaEn, cargaEn + 10], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  const progresoCarga =
+    cargaEn === undefined
+      ? 1
+      : interpolate(frame, [cargaEn - 14, cargaEn + 4], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
   const barra = 64;
   const vh = h - barra;
   const cam = camara(frame, claves);
@@ -123,10 +137,16 @@ export const Navegador: React.FC<{
             fontWeight: 500,
           }}
         >
-          🔒&nbsp;&nbsp;{url}
+          🔒&nbsp;&nbsp;{urlVisible}
+          {tecleando ? (
+            <span style={{ width: 2, height: 24, background: C.tinta, marginLeft: 2, opacity: Math.floor(frame / 10) % 2 ? 0 : 1 }} />
+          ) : null}
         </div>
       </div>
-      <div style={{ position: "relative", width: w, height: vh, overflow: "hidden" }}>
+      {progresoCarga > 0 && progresoCarga < 1 ? (
+        <div style={{ position: "absolute", top: barra - 4, left: 0, height: 4, width: `${progresoCarga * 100}%`, background: C.azulWeb, zIndex: 2 }} />
+      ) : null}
+      <div style={{ position: "relative", width: w, height: vh, overflow: "hidden", opacity: opPagina }}>
         <div
           style={{
             position: "absolute",
@@ -305,12 +325,13 @@ export const CabeceraPaso: React.FC<{
   titulo: React.ReactNode;
   sub?: React.ReactNode;
   color?: string;
-}> = ({ paso, titulo, sub, color = C.cian }) => {
+  retrasoSub?: number;
+}> = ({ paso, titulo, sub, color = C.cian, retrasoSub = 10 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const a = entrada(frame, fps, 0);
   const b = entrada(frame, fps, 5);
-  const c = entrada(frame, fps, 10);
+  const c = entrada(frame, fps, retrasoSub);
   return (
     <div
       style={{
@@ -385,7 +406,10 @@ export const Fondo: React.FC = () => {
 };
 
 // ---------- Pie con logos ----------
-export const PieLogos: React.FC = () => (
+export const PieLogos: React.FC<{ src?: string; alto?: number }> = ({
+  src = "marca/logos-azarbe-ude.png",
+  alto = 76,
+}) => (
   <div
     style={{
       position: "absolute",
@@ -396,7 +420,7 @@ export const PieLogos: React.FC = () => (
       justifyContent: "center",
     }}
   >
-    <Img src={staticFile("marca/logos-azarbe-ude.png")} style={{ height: 76, mixBlendMode: "multiply" }} />
+    <Img src={staticFile(src)} style={{ height: alto, mixBlendMode: "multiply" }} />
   </div>
 );
 

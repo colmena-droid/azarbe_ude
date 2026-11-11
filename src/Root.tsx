@@ -1,6 +1,8 @@
 import { Composition } from "remotion";
 import { FlujoRegistro, DURACION_FLUJO_REGISTRO } from "./videos/001-flujo-registro/FlujoRegistro";
-import { AccesoAzarbe, DURACION_ACCESO_AZARBE } from "./videos/002-acceso-azarbe/AccesoAzarbe";
+import { AccesoMarca, duracionTotal } from "./videos/acceso/AccesoMarca";
+import { AZARBE } from "./videos/002-acceso-azarbe/marca";
+import { UDE } from "./videos/003-acceso-ude/marca";
 import { FPS, H, W } from "./config";
 
 export const RemotionRoot: React.FC = () => {
@@ -16,8 +18,18 @@ export const RemotionRoot: React.FC = () => {
       />
       <Composition
         id="002-acceso-azarbe"
-        component={AccesoAzarbe}
-        durationInFrames={DURACION_ACCESO_AZARBE}
+        component={AccesoMarca}
+        defaultProps={{ marca: AZARBE }}
+        durationInFrames={duracionTotal(AZARBE)}
+        fps={FPS}
+        width={W}
+        height={H}
+      />
+      <Composition
+        id="003-acceso-ude"
+        component={AccesoMarca}
+        defaultProps={{ marca: UDE }}
+        durationInFrames={duracionTotal(UDE)}
         fps={FPS}
         width={W}
         height={H}

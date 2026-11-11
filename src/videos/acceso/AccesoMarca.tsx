@@ -1,4 +1,4 @@
-import React from "react";
+import React, { createContext, useContext } from "react";
 import {
   AbsoluteFill,
   Audio,
@@ -25,14 +25,38 @@ import {
   Resalte,
 } from "../../componentes";
 
-// Vídeo 002 · Cómo acceder a la nueva web de Azarbe (azarbe.es → abacuseducacion.es)
+// Plantilla · Cómo acceder a la nueva web (Azarbe / UDE → abacuseducacion.es)
 // Locución: ElevenLabs, voz «Lydia» (español peninsular), toma A.
 // Los cortes de escena están sincronizados con las pausas de la locución.
 
-const VOZ = "audio/002-azarbe-voz-a-norm.mp3"; // normalizada a -16 LUFS
-const RETRASO_VOZ = 12; // frames (0,4 s) antes de que empiece a hablar
-const LOGO = "marca/logo-azarbe.png";
-const URL = "azarbe.es"; // por marca se muestra siempre azarbe.es
+export type Marca = {
+  nombre: string; // como se escribe en pantalla
+  url: string; // por marca se muestra siempre su dominio (azarbe.es / ude.es)
+  logo: string;
+  voz: string;
+  retrasoVoz: number; // frames antes de que empiece a hablar
+  desfasePaso1: number; // ajuste (frames) del zoom/clic a «Inicia sesión» según la locución
+  dur: Record<Escena, number>;
+};
+
+export type Escena =
+  | "intro"
+  | "paso1"
+  | "cliente"
+  | "nuevo"
+  | "aviso"
+  | "formulario"
+  | "registrarse"
+  | "ventajas"
+  | "cierre";
+
+const MarcaCtx = createContext<Marca | null>(null);
+const useMarca = () => {
+  const m = useContext(MarcaCtx);
+  if (!m) throw new Error("Falta <MarcaCtx.Provider>");
+  return m;
+};
+export const duracionTotal = (m: Marca) => Object.values(m.dur).reduce((a, b) => a + b, 0);
 
 const INICIO = "capturas/01-inicio.png"; // 1440×900
 const LOGIN = "capturas/02-iniciar-sesion.png"; // 1440×900
@@ -40,19 +64,6 @@ const REGISTRO = "capturas/03-crear-cuenta.png"; // 1440×1825
 
 const NAV = { x: 40, y: 590, w: 1000, h: 1010 };
 const FIT = NAV.w / 1440;
-
-const DUR = {
-  intro: 137,
-  paso1: 222,
-  cliente: 262,
-  nuevo: 107,
-  aviso: 190,
-  formulario: 422,
-  registrarse: 100,
-  ventajas: 201,
-  cierre: 120,
-};
-export const DURACION_ACCESO_AZARBE = Object.values(DUR).reduce((a, b) => a + b, 0);
 
 const R: React.FC<{ children: React.ReactNode; color?: string }> = ({ children, color = C.cian }) => (
   <span style={{ color }}>{children}</span>
@@ -67,7 +78,7 @@ const Intro: React.FC = () => {
   const t2 = entrada(frame, fps, 70);
   return (
     <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", fontFamily: FUENTE, color: C.tinta }}>
-      <Img src={staticFile(LOGO)} style={{ width: 760, transform: `scale(${logo})`, marginBottom: 120 }} />
+      <Img src={staticFile(useMarca().logo)} style={{ width: 760, transform: `scale(${logo})`, marginBottom: 120 }} />
       <div
         style={{
           fontSize: 100,
@@ -82,7 +93,7 @@ const Intro: React.FC = () => {
         ¿Quieres acceder
         <br />a la <R>nueva web</R>
         <br />
-        de Azarbe?
+        de {useMarca().nombre}?
       </div>
       <div
         style={{
@@ -103,14 +114,16 @@ const Intro: React.FC = () => {
   );
 };
 
-// ---------------- 2 · Paso 1: azarbe.es → «Inicia sesión» ----------------
-const Paso1: React.FC = () => (
+// ---------------- 2 · Paso 1: dominio → «Inicia sesión» ----------------
+const Paso1: React.FC = () => {
+  const d = useMarca().desfasePaso1;
+  return (
   <AbsoluteFill>
     <CabeceraPaso
       paso="PASO 1"
       titulo={
         <>
-          Entra en <R>azarbe.es</R>
+          Entra en <R>{useMarca().url}</R>
         </>
       }
       sub={
@@ -118,39 +131,40 @@ const Paso1: React.FC = () => (
           Y pulsa <b style={{ color: C.azulWeb }}>«Inicia sesión»</b>, arriba a la derecha
         </>
       }
-      retrasoSub={125}
+      retrasoSub={125 + d}
     />
     <Navegador
       src={INICIO}
       anchoPagina={1440}
       altoPagina={900}
-      url={URL}
+      url={useMarca().url}
       urlEscrita={{ desde: 14, porFrame: 0.4 }}
       cargaEn={50}
       {...NAV}
       claves={[
         { f: 0, cx: 720, cy: 450, z: FIT },
-        { f: 130, cx: 720, cy: 450, z: FIT },
-        { f: 170, cx: 1050, cy: 250, z: 1.85 },
+        { f: 130 + d, cx: 720, cy: 450, z: FIT },
+        { f: 170 + d, cx: 1050, cy: 250, z: 1.85 },
       ]}
     >
       {(z) => (
         <>
-          <Resalte z={z} x={1016} y={21} w={121} h={32} desde={178} />
+          <Resalte z={z} x={1016} y={21} w={121} h={32} desde={178 + d} />
           <Cursor
             z={z}
-            aparece={140}
+            aparece={140 + d}
             puntos={[
-              { f: 140, x: 860, y: 380 },
-              { f: 185, x: 1070, y: 40 },
+              { f: 140 + d, x: 860, y: 380 },
+              { f: 185 + d, x: 1070, y: 40 },
             ]}
-            clics={[195]}
+            clics={[195 + d]}
           />
         </>
       )}
     </Navegador>
   </AbsoluteFill>
-);
+  );
+};
 
 // ---------------- 3 · Paso 2: ya soy cliente ----------------
 const AvisoCorreo: React.FC<{ desde: number }> = ({ desde }) => {
@@ -217,7 +231,7 @@ const Cliente: React.FC = () => (
       src={LOGIN}
       anchoPagina={1440}
       altoPagina={900}
-      url={URL}
+      url={useMarca().url}
       {...NAV}
       claves={[
         { f: 0, cx: 720, cy: 450, z: FIT },
@@ -262,7 +276,7 @@ const Nuevo: React.FC = () => (
       src={LOGIN}
       anchoPagina={1440}
       altoPagina={900}
-      url={URL}
+      url={useMarca().url}
       {...NAV}
       claves={[
         { f: 0, cx: 432, cy: 330, z: 1.55 },
@@ -441,7 +455,7 @@ const Formulario: React.FC = () => (
       src={REGISTRO}
       anchoPagina={1440}
       altoPagina={1825}
-      url={URL}
+      url={useMarca().url}
       {...NAV}
       claves={[
         { f: 0, cx: 720, cy: 760, z: 0.72 },
@@ -536,11 +550,11 @@ const Registrarse: React.FC = () => (
       src={REGISTRO}
       anchoPagina={1440}
       altoPagina={1825}
-      url={URL}
+      url={useMarca().url}
       {...NAV}
       claves={[
         { f: 0, cx: 720, cy: 1320, z: 1.5 },
-        { f: 18, cx: 720, cy: 1430, z: 1.7 },
+        { f: 18, cx: 720, cy: 1300, z: 1.7 },
       ]}
     >
       {(z) => (
@@ -628,7 +642,7 @@ const Cierre: React.FC = () => {
   const c = entrada(frame, fps, 18);
   return (
     <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", fontFamily: FUENTE, color: C.tinta }}>
-      <Img src={staticFile(LOGO)} style={{ width: 760, transform: `scale(${a})` }} />
+      <Img src={staticFile(useMarca().logo)} style={{ width: 760, transform: `scale(${a})` }} />
       <div
         style={{
           marginTop: 110,
@@ -658,7 +672,7 @@ const Cierre: React.FC = () => {
           boxShadow: `0 20px 50px ${C.cian}66`,
         }}
       >
-        azarbe.es
+        {useMarca().url}
       </div>
     </AbsoluteFill>
   );
@@ -671,7 +685,7 @@ const Progreso: React.FC = () => {
       <div
         style={{
           height: "100%",
-          width: `${(frame / DURACION_ACCESO_AZARBE) * 100}%`,
+          width: `${(frame / duracionTotal(useMarca())) * 100}%`,
           background: `linear-gradient(90deg, ${C.cian}, ${C.lima}, ${C.amarillo}, ${C.rojo})`,
         }}
       />
@@ -679,8 +693,8 @@ const Progreso: React.FC = () => {
   );
 };
 
-export const AccesoAzarbe: React.FC = () => {
-  const escenas: [keyof typeof DUR, React.FC, boolean][] = [
+export const AccesoMarca: React.FC<{ marca: Marca }> = ({ marca }) => {
+  const escenas: [Escena, React.FC, boolean][] = [
     ["intro", Intro, false],
     ["paso1", Paso1, true],
     ["cliente", Cliente, true],
@@ -692,23 +706,25 @@ export const AccesoAzarbe: React.FC = () => {
     ["cierre", Cierre, false],
   ];
   return (
+    <MarcaCtx.Provider value={marca}>
     <AbsoluteFill style={{ fontFamily: FUENTE }}>
       <Fuentes />
       <Fondo />
       <Series>
         {escenas.map(([k, Comp, logo]) => (
-          <Series.Sequence key={k} durationInFrames={DUR[k]}>
-            <Escena dur={DUR[k]}>
+          <Series.Sequence key={k} durationInFrames={marca.dur[k]}>
+            <Escena dur={marca.dur[k]}>
               <Comp />
-              {logo ? <PieLogos src={LOGO} alto={84} /> : null}
+              {logo ? <PieLogos src={marca.logo} alto={84} /> : null}
             </Escena>
           </Series.Sequence>
         ))}
       </Series>
-      <Sequence from={RETRASO_VOZ}>
-        <Audio src={staticFile(VOZ)} />
+      <Sequence from={marca.retrasoVoz}>
+        <Audio src={staticFile(marca.voz)} />
       </Sequence>
       <Progreso />
     </AbsoluteFill>
+    </MarcaCtx.Provider>
   );
 };
